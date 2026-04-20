@@ -47,7 +47,6 @@ import OfficeReport from "@/pages/OfficeReport";
 import TrashBin from "@/pages/TrashBin";
 import SystemGuide from "@/pages/SystemGuide";
 import NotFound from "./pages/NotFound";
-import SystemShutdownBanner from "@/components/SystemShutdownBanner";
 
 const queryClient = new QueryClient();
 
@@ -62,7 +61,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <SystemShutdownBanner />
       <BrowserRouter>
         <AuthProvider>
           <Routes>
