@@ -62,9 +62,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <SystemShutdownBanner />
       <BrowserRouter>
         <AuthProvider>
-          <SystemShutdownBanner />
           <Routes>
             <Route path="/login" element={<LoginRedirect />} />
             <Route path="/tracking" element={<TrackingPage />} />

@@ -1,45 +1,32 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-
-function getTargetTime() {
-  const now = new Date();
-  const target = new Date();
-  target.setHours(21, 0, 0, 0);
-  return target;
-}
-
-function formatRemaining(ms: number) {
-  if (ms <= 0) return '00:00:00';
-  const totalSeconds = Math.floor(ms / 1000);
-  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-  const s = String(totalSeconds % 60).padStart(2, '0');
-  return `${h}:${m}:${s}`;
-}
+import { Lock } from 'lucide-react';
 
 export default function SystemShutdownBanner() {
-  const [remaining, setRemaining] = useState(() => getTargetTime().getTime() - Date.now());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRemaining(getTargetTime().getTime() - Date.now());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (remaining <= 0) return null;
-
   return (
     <div
       dir="rtl"
-      className="w-full bg-destructive text-destructive-foreground px-3 py-2 text-sm flex items-center justify-center gap-2 shadow-md flex-wrap"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-background p-4"
     >
-      <AlertTriangle className="h-4 w-4 shrink-0" />
-      <span className="font-semibold">تنبيه:</span>
-      <span>السيستم هيقف لعدم وجود تقدير — متبقي على الإيقاف:</span>
-      <span className="font-mono font-bold tracking-wider bg-background/20 px-2 py-0.5 rounded">
-        {formatRemaining(remaining)}
-      </span>
+      <div className="max-w-md w-full bg-card border-2 border-destructive rounded-2xl shadow-2xl p-8 text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="bg-destructive/10 p-6 rounded-full">
+            <Lock className="h-16 w-16 text-destructive" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold text-destructive">السيستم مقفول</h1>
+          <p className="text-lg text-foreground font-semibold">
+            تم إيقاف النظام مؤقتاً
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            السيستم متوقف حالياً لعدم وجود تقدير. برجاء التواصل مع الإدارة لمعرفة موعد إعادة التشغيل.
+          </p>
+        </div>
+        <div className="pt-4 border-t border-border">
+          <p className="text-sm text-muted-foreground">
+            Black Horse — نظام الشحن
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
