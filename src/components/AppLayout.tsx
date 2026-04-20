@@ -20,6 +20,13 @@ export default function AppLayout() {
   const { isCourier, isOwnerOrAdmin, isOffice } = useAuth();
   const { canView, canEdit } = usePermissions();
   const location = useLocation();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    toast.success('جاري تحديث الصفحة...');
+    setTimeout(() => window.location.reload(), 300);
+  };
 
   if (isOffice && !isOwnerOrAdmin) {
     return <Navigate to="/office-portal" replace />;
@@ -35,13 +42,6 @@ export default function AppLayout() {
 
   const guideKey = getGuideKey(location.pathname);
   const guide = guideKey ? sectionGuides[guideKey] : null;
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    toast.success('جاري تحديث الصفحة...');
-    setTimeout(() => window.location.reload(), 300);
-  };
 
   return (
     <SidebarProvider>
