@@ -35,6 +35,7 @@ export const ALL_SECTIONS = [
   { key: 'office-stats', label: 'إحصائيات المكاتب', url: '/office-stats' },
   { key: 'profit-report', label: 'تقرير الأرباح', url: '/profit-report' },
   { key: 'tracking', label: 'تتبع الشحنات', url: '/tracking' },
+  { key: 'barcode-scanning', label: 'قراءة الباركود', url: '/barcode-scanning' },
   { key: 'print', label: 'الطباعة', url: '/print' },
   { key: 'order-notes', label: 'ملاحظات الأوردرات', url: '/order-notes' },
   { key: 'data-export', label: 'تصدير البيانات', url: '/data-export' },

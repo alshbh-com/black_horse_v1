@@ -3,7 +3,7 @@ import {
   Truck, Wallet, CreditCard, ScrollText, Settings, LogOut, Archive, Building,
   PackageSearch, Search, Printer, DollarSign, MapPin, Users, BarChart3,
   TrendingUp, Calendar, UserCheck, MessageSquare, Locate, FileSpreadsheet,
-  CircleDot, Calculator, Contact, ClipboardList, Trash2, FileBarChart, Navigation2, BookOpen
+  CircleDot, Calculator, Contact, ClipboardList, Trash2, FileBarChart, Navigation2, BookOpen, ScanLine
 } from 'lucide-react';
 import blackHorseLogo from '@/assets/black-horse-logo.jpg';
 import { NavLink } from '@/components/NavLink';
@@ -52,6 +52,7 @@ const reportsItems = [
 
 const toolsItems = [
   { title: 'شرح السيستم', url: '/system-guide', icon: BookOpen },
+  { title: 'قراءة الباركود', url: '/barcode-scanning', icon: ScanLine },
   { title: 'تتبع الشحنات', url: '/tracking', icon: Locate },
   { title: 'الطباعة', url: '/print', icon: Printer },
   { title: 'ملاحظات الأوردرات', url: '/order-notes', icon: MessageSquare },
