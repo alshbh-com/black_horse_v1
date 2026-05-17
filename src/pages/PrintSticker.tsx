@@ -49,13 +49,6 @@ export default function PrintSticker() {
 
   const selectedOrders = results.filter(o => selected.has(o.id));
 
-  const generateBarcodeStripes = (barcode: string) => {
-    return barcode.split('').map((c: string) => {
-      const w = (parseInt(c) || 1) + 1;
-      return `<div style="width:${w}px;height:30px;background:#000;margin:0 0.5px;display:inline-block"></div>`;
-    }).join('');
-  };
-
   const printStickers = () => {
     if (selectedOrders.length === 0) { toast.error('اختر أوردرات للطباعة'); return; }
     const printWindow = window.open('', '_blank', 'width=400,height=600');
@@ -68,7 +61,8 @@ export default function PrintSticker() {
         <div class="sticker">
           <div class="header">بلاك هورس</div>
           <div class="date">${new Date(order.created_at).toLocaleDateString('ar-EG')}</div>
-          <div class="barcode-num">${barcode}</div>
+          <div class="bc-wrap"><svg class="bc" data-bc="${barcode}"></svg></div>
+          <div class="qr-wrap"><div class="qr" data-qr="${barcode}"></div></div>
           <div class="row"><span>الكود: <b>${order.customer_code || '-'}</b></span></div>
           <div class="info">العميل: <b>${order.customer_name}</b></div>
           <div class="info">المكتب: <b>${order.offices?.name || '-'}</b></div>
@@ -80,21 +74,31 @@ export default function PrintSticker() {
     }).join('');
 
     printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
       <style>
         @page { size: 50mm 100mm; margin: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
-        .sticker { width: 50mm; height: 100mm; padding: 4mm 1.5mm 4mm 10mm; box-sizing: border-box; page-break-after: always; display: flex; flex-direction: column; direction: rtl; text-align: right; }
+        .sticker { width: 50mm; height: 100mm; padding: 3mm 1.5mm 3mm 8mm; box-sizing: border-box; page-break-after: always; display: flex; flex-direction: column; direction: rtl; text-align: right; }
         .sticker:last-child { page-break-after: auto; }
-        .header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 1px; direction: ltr; }
-        .date { text-align: center; font-size: 8px; margin-bottom: 3px; color: #333; }
-        .barcode-num { font-family: monospace; font-size: 17px; font-weight: bold; margin-bottom: 4px; text-align: center; }
-        .info { margin: 2px 0; font-size: 10px; line-height: 1.4; text-align: right; word-wrap: break-word; overflow-wrap: break-word; }
-        .row { display: flex; justify-content: space-between; margin: 2px 0; font-size: 10px; }
-        .total { font-size: 15px; font-weight: bold; text-align: center; border: 1.5px solid #000; padding: 3px; margin-top: auto; }
-      </style></head><body>${stickers}</body></html>`);
+        .header { text-align: center; font-size: 14px; font-weight: bold; direction: ltr; }
+        .date { text-align: center; font-size: 8px; color: #333; }
+        .bc-wrap { text-align: center; margin-top: 2px; }
+        .bc { max-width: 100%; height: 28px; }
+        .qr-wrap { text-align: center; margin: 1mm 0; }
+        .info { margin: 1px 0; font-size: 9px; line-height: 1.3; }
+        .row { display: flex; justify-content: space-between; margin: 1px 0; font-size: 9px; }
+        .total { font-size: 14px; font-weight: bold; text-align: center; border: 1.5px solid #000; padding: 2px; margin-top: auto; }
+      </style></head><body>${stickers}
+      <script>
+        window.onload=function(){
+          document.querySelectorAll('svg.bc').forEach(function(el){try{JsBarcode(el,el.dataset.bc,{format:'CODE128',height:28,width:1.2,fontSize:9,margin:0,displayValue:true});}catch(e){}});
+          document.querySelectorAll('.qr').forEach(function(el){QRCode.toCanvas(el.dataset.qr,{width:70,margin:0},function(err,canvas){if(!err)el.appendChild(canvas);});});
+          setTimeout(function(){window.print();},500);
+        };
+      </script>
+      </body></html>`);
     printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
   };
 
   const printInvoice = () => {
@@ -109,6 +113,10 @@ export default function PrintSticker() {
         <div class="invoice-page">
           <div class="header">بلاك هورس</div>
           <div class="date">${new Date().toLocaleDateString('ar-EG')} - فاتورة ${i + 1} من ${selectedOrders.length}</div>
+          <div class="codes">
+            <svg class="bc" data-bc="${barcode}"></svg>
+            <div class="qr" data-qr="${barcode}"></div>
+          </div>
           <table>
             <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
             <tr><th>الباركود</th><td style="font-family:monospace;direction:ltr">${barcode}</td></tr>
@@ -126,21 +134,31 @@ export default function PrintSticker() {
     }).join('');
 
     printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
       <style>
         @page { size: A4; margin: 15mm; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
         .invoice-page { page-break-after: always; padding: 10mm 0; }
         .invoice-page:last-child { page-break-after: auto; }
-        .header { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .date { text-align: center; margin-bottom: 20px; color: #666; font-size: 13px; }
+        .header { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 6px; }
+        .date { text-align: center; margin-bottom: 14px; color: #666; font-size: 13px; }
+        .codes { display: flex; justify-content: space-around; align-items: center; margin-bottom: 16px; gap: 20px; }
+        .codes .bc { height: 60px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #333; padding: 10px 14px; text-align: right; font-size: 14px; }
         th { background: #f0f0f0; font-weight: bold; width: 30%; }
         .total { font-size: 22px; font-weight: bold; text-align: center; border: 3px solid #000; padding: 12px; }
-      </style></head><body>${invoicesHtml}</body></html>`);
+      </style></head><body>${invoicesHtml}
+      <script>
+        window.onload=function(){
+          document.querySelectorAll('svg.bc').forEach(function(el){try{JsBarcode(el,el.dataset.bc,{format:'CODE128',height:60,width:2,fontSize:14,margin:0,displayValue:true});}catch(e){}});
+          document.querySelectorAll('.qr').forEach(function(el){QRCode.toCanvas(el.dataset.qr,{width:110,margin:0},function(err,canvas){if(!err)el.appendChild(canvas);});});
+          setTimeout(function(){window.print();},500);
+        };
+      </script>
+      </body></html>`);
     printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
   };
 
   return (
