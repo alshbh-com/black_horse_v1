@@ -696,6 +696,39 @@ export type Database = {
           },
         ]
       }
+      order_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status_id: string | null
+          old_status_id: string | null
+          order_id: string
+          reason: string | null
+          session_id: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status_id?: string | null
+          old_status_id?: string | null
+          order_id: string
+          reason?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status_id?: string | null
+          old_status_id?: string | null
+          order_id?: string
+          reason?: string | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
       order_statuses: {
         Row: {
           color: string
@@ -746,6 +779,7 @@ export type Database = {
           priority: string
           product_id: string | null
           product_name: string | null
+          qr_value: string | null
           quantity: number
           shipping_paid: number | null
           size: string | null
@@ -775,6 +809,7 @@ export type Database = {
           priority?: string
           product_id?: string | null
           product_name?: string | null
+          qr_value?: string | null
           quantity?: number
           shipping_paid?: number | null
           size?: string | null
@@ -804,6 +839,7 @@ export type Database = {
           priority?: string
           product_id?: string | null
           product_name?: string | null
+          qr_value?: string | null
           quantity?: number
           shipping_paid?: number | null
           size?: string | null
@@ -909,6 +945,106 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scan_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          order_id: string | null
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          order_id?: string | null
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          order_id?: string | null
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_session_items: {
+        Row: {
+          id: string
+          order_id: string
+          scanned_at: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          scanned_at?: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          scanned_at?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_session_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          status: string
+          total_scanned: number
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string
+          total_scanned?: number
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string
+          total_scanned?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       user_permissions: {
         Row: {
