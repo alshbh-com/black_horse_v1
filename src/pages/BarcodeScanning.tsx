@@ -87,7 +87,7 @@ export default function BarcodeScanning() {
     }
     const { data: order } = await supabase
       .from('orders')
-      .select('*, offices(name), order_statuses(name, color), courier:profiles!orders_courier_id_fkey(full_name)')
+      .select('*, offices(name)')
       .or(`barcode.eq.${code},tracking_id.eq.${code}`)
       .maybeSingle();
     if (!order) {
@@ -95,12 +95,16 @@ export default function BarcodeScanning() {
       toast.error(`لم يتم العثور على الأوردر: ${code}`);
       return;
     }
+    // enrich with status + courier from local lookups
+    const status = statuses.find(s => s.id === order.status_id);
+    const courier = couriers.find(c => c.id === order.courier_id);
+    const enriched = { ...order, order_statuses: status, courier };
     if (order.is_closed) {
       playError();
       toast.error(`الأوردر ${code} مغلق`);
       return;
     }
-    setOrders(prev => [order, ...prev]);
+    setOrders(prev => [enriched, ...prev]);
     if (sessionId) {
       await supabase.from('scan_session_items').insert({ session_id: sessionId, order_id: order.id });
       await supabase.from('scan_logs').insert({
