@@ -46,6 +46,7 @@ import AccountingLayout from "@/components/AccountingLayout";
 import OfficeReport from "@/pages/OfficeReport";
 import TrashBin from "@/pages/TrashBin";
 import SystemGuide from "@/pages/SystemGuide";
+import BarcodeScanning from "@/pages/BarcodeScanning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="/office-report" element={<OfficeReport />} />
               <Route path="/trash" element={<TrashBin />} />
               <Route path="/system-guide" element={<SystemGuide />} />
+              <Route path="/barcode-scanning" element={<BarcodeScanning />} />
               <Route path="/chat" element={<InternalChat />} />
             </Route>
             <Route path="*" element={<NotFound />} />
