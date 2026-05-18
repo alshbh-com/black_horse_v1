@@ -21,8 +21,20 @@ export default function OfficePortal() {
   const [canAddOrders, setCanAddOrders] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
   useEffect(() => {
     loadData();
+    if (!user) return;
+    // realtime updates for this office's orders
+    const channel = supabase
+      .channel('office-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const loadData = async () => {
@@ -49,6 +61,7 @@ export default function OfficePortal() {
     const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
     setStatuses(sts || []);
 
+    // RLS already limits to own office + is_closed=false
     const { data: ords } = await supabase
       .from('orders')
       .select('*')
@@ -58,8 +71,30 @@ export default function OfficePortal() {
     setLoading(false);
   };
 
-  const getStatusName = (statusId: string) => statuses.find(s => s.id === statusId)?.name || '-';
+  const getStatusName = (statusId: string) => statuses.find(s => s.id === statusId)?.name || 'بدون حالة';
   const getStatusColor = (statusId: string) => statuses.find(s => s.id === statusId)?.color || '#6b7280';
+
+  const filtered = orders.filter(o => {
+    const s = search.trim();
+    const matchSearch = !s ||
+      o.customer_name?.includes(s) || o.customer_phone?.includes(s) ||
+      o.barcode?.includes(s) || o.customer_code?.includes(s) ||
+      o.address?.includes(s) || o.product_name?.includes(s);
+    const matchStatus = filterStatus === 'all'
+      ? true
+      : filterStatus === 'none'
+        ? !o.status_id
+        : o.status_id === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const statusCounts: Record<string, number> = {};
+  orders.forEach(o => {
+    const name = getStatusName(o.status_id);
+    statusCounts[name] = (statusCounts[name] || 0) + 1;
+  });
+  const totalCollection = filtered.reduce((sum, o) => sum + Number(o.price || 0) + Number(o.delivery_price || 0), 0);
+
 
   return (
     <div className="min-h-screen bg-background p-4" dir="rtl">
