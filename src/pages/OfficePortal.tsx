@@ -5,10 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LogOut, Package, Plus, Loader2 } from 'lucide-react';
+import { LogOut, Package, Plus, Loader2, Search, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 export default function OfficePortal() {
@@ -20,8 +21,20 @@ export default function OfficePortal() {
   const [canAddOrders, setCanAddOrders] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+
   useEffect(() => {
     loadData();
+    if (!user) return;
+    // realtime updates for this office's orders
+    const channel = supabase
+      .channel('office-orders-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        loadData();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const loadData = async () => {
@@ -48,6 +61,7 @@ export default function OfficePortal() {
     const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
     setStatuses(sts || []);
 
+    // RLS already limits to own office + is_closed=false
     const { data: ords } = await supabase
       .from('orders')
       .select('*')
@@ -57,8 +71,30 @@ export default function OfficePortal() {
     setLoading(false);
   };
 
-  const getStatusName = (statusId: string) => statuses.find(s => s.id === statusId)?.name || '-';
+  const getStatusName = (statusId: string) => statuses.find(s => s.id === statusId)?.name || 'بدون حالة';
   const getStatusColor = (statusId: string) => statuses.find(s => s.id === statusId)?.color || '#6b7280';
+
+  const filtered = orders.filter(o => {
+    const s = search.trim();
+    const matchSearch = !s ||
+      o.customer_name?.includes(s) || o.customer_phone?.includes(s) ||
+      o.barcode?.includes(s) || o.customer_code?.includes(s) ||
+      o.address?.includes(s) || o.product_name?.includes(s);
+    const matchStatus = filterStatus === 'all'
+      ? true
+      : filterStatus === 'none'
+        ? !o.status_id
+        : o.status_id === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const statusCounts: Record<string, number> = {};
+  orders.forEach(o => {
+    const name = getStatusName(o.status_id);
+    statusCounts[name] = (statusCounts[name] || 0) + 1;
+  });
+  const totalCollection = filtered.reduce((sum, o) => sum + Number(o.price || 0) + Number(o.delivery_price || 0), 0);
+
 
   return (
     <div className="min-h-screen bg-background p-4" dir="rtl">
@@ -70,11 +106,74 @@ export default function OfficePortal() {
           </div>
           <div className="flex gap-2">
             {canAddOrders && <AddOfficeOrderDialog officeId={officeId} onOrderAdded={loadData} />}
+            <Button variant="outline" size="sm" onClick={loadData}>
+              <RefreshCw className="h-4 w-4 ml-1" />
+              تحديث
+            </Button>
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 ml-1" />
               خروج
             </Button>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">إجمالي الأوردرات المفتوحة</p>
+              <p className="text-xl font-bold">{orders.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">المعروض حالياً</p>
+              <p className="text-xl font-bold">{filtered.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border col-span-2">
+            <CardContent className="p-3">
+              <p className="text-xs text-muted-foreground">إجمالي التحصيل (المعروض)</p>
+              <p className="text-xl font-bold">{totalCollection.toLocaleString()} ج.م</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {Object.keys(statusCounts).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(statusCounts).map(([name, count]) => {
+              const st = statuses.find(s => s.name === name);
+              return (
+                <Badge
+                  key={name}
+                  style={{ backgroundColor: st?.color ? st.color + '30' : undefined, color: st?.color, borderColor: st?.color }}
+                  variant="outline"
+                  className="text-xs"
+                >
+                  {name}: <span className="font-bold mr-1">{count}</span>
+                </Badge>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="relative flex-1 min-w-[180px] max-w-sm">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="بحث بالاسم/الهاتف/الباركود/العنوان..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pr-9 bg-secondary border-border"
+            />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-40 bg-secondary border-border"><SelectValue placeholder="الحالة" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              <SelectItem value="none">بدون حالة</SelectItem>
+              {statuses.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <Card className="bg-card border-border">
@@ -90,17 +189,17 @@ export default function OfficePortal() {
                     <TableHead className="text-right">المنتج</TableHead>
                     <TableHead className="text-right">السعر</TableHead>
                     <TableHead className="text-right">الشحن</TableHead>
+                    <TableHead className="text-right">الإجمالي</TableHead>
                     <TableHead className="text-right">العنوان</TableHead>
                     <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">جارٍ التحميل...</TableCell></TableRow>
-                  ) : orders.length === 0 ? (
-                    <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">لا توجد أوردرات</TableCell></TableRow>
-                  ) : orders.map(o => (
+                    <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8"><Loader2 className="h-4 w-4 animate-spin inline ml-2" />جارٍ التحميل...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8"><Package className="h-5 w-5 inline ml-2" />لا توجد أوردرات</TableCell></TableRow>
+                  ) : filtered.map(o => (
                     <TableRow key={o.id} className="border-border">
                       <TableCell className="text-xs"><div className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString('ar-EG')}</div><div className="font-mono font-bold">{o.barcode || '-'}</div></TableCell>
                       <TableCell className="text-sm">{o.customer_code || '-'}</TableCell>
@@ -109,14 +208,12 @@ export default function OfficePortal() {
                       <TableCell className="text-sm">{o.product_name}</TableCell>
                       <TableCell className="text-sm font-bold">{o.price} ج.م</TableCell>
                       <TableCell className="text-sm">{o.delivery_price} ج.م</TableCell>
-                      <TableCell className="text-sm">{o.address || '-'}</TableCell>
+                      <TableCell className="text-sm font-bold">{Number(o.price) + Number(o.delivery_price)} ج.م</TableCell>
+                      <TableCell className="text-sm max-w-[160px] truncate">{o.address || '-'}</TableCell>
                       <TableCell>
-                        <Badge style={{ backgroundColor: getStatusColor(o.status_id) }} className="text-xs text-white">
+                        <Badge style={{ backgroundColor: getStatusColor(o.status_id) }} className="text-xs text-white whitespace-nowrap">
                           {getStatusName(o.status_id)}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(o.created_at).toLocaleDateString('ar-EG')}
                       </TableCell>
                     </TableRow>
                   ))}
