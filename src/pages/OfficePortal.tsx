@@ -61,11 +61,16 @@ export default function OfficePortal() {
     const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
     setStatuses(sts || []);
 
-    // RLS already limits to own office + is_closed=false
-    const { data: ords } = await supabase
+    // Only unclosed orders for this office
+    let query = supabase
       .from('orders')
       .select('*')
+      .or('is_closed.is.null,is_closed.eq.false')
       .order('created_at', { ascending: false });
+    if (profile?.office_id) {
+      query = query.eq('office_id', profile.office_id);
+    }
+    const { data: ords } = await query;
     setOrders(ords || []);
 
     setLoading(false);

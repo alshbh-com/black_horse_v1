@@ -67,6 +67,15 @@ export default function Login() {
           </form>
         </CardContent>
       </Card>
+
+      <a
+        href="https://wa.me/201061067966"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-center text-xs text-muted-foreground hover:text-primary transition-colors px-4"
+      >
+        تم صنع السيستم من شركة دوبامين ويوجد سيستم سيلر ومتاجر 01061067966
+      </a>
     </div>
   );
 }
